@@ -116,7 +116,7 @@ void GameTimer::Tick()
 	// Prepare for next frame.
 	mPrevTime = mCurrTime;
 
-	// Force nonnegative.  The DXSDK's CDXUTTimer mentions that if the 
+	// 음수가 되지 않게 한다.  The DXSDK's CDXUTTimer mentions that if the 
 	// processor goes into a power save mode or we get shuffled to another
 	// processor, then mDeltaTime can be negative.
 	if(mDeltaTime < 0.0)
