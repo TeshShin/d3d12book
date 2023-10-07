@@ -18,10 +18,10 @@ GameTimer::GameTimer()
 // time when the clock is stopped.
 float GameTimer::TotalTime()const
 {
-	// If we are stopped, do not count the time that has passed since we stopped.
-	// Moreover, if we previously already had a pause, the distance 
-	// mStopTime - mBaseTime includes paused time, which we do not want to count.
-	// To correct this, we can subtract the paused time from mStopTime:  
+	// 타이머가 정지 상태이면, 정지된 시점부터 흐른 시간은 계산하지 말아야 한다.
+	// 또한, 이전에 이미 일시 정지된 적이 있다면 시간차 mStopTime - mBaseTime에는
+	// 일시 정지 누적 시간이 포함되어 있는데, 그 누적 시간은 전체 시간에 포함하지 말아야한다.
+	// 이를 바로 잡기 위해, mStopTime에서 일시 정지 누적 시간을 뺀다:  
 	//
 	//                     |<--paused time-->|
 	// ----*---------------*-----------------*------------*------------*------> time
@@ -32,9 +32,9 @@ float GameTimer::TotalTime()const
 		return (float)(((mStopTime - mPausedTime)-mBaseTime)*mSecondsPerCount);
 	}
 
-	// The distance mCurrTime - mBaseTime includes paused time,
-	// which we do not want to count.  To correct this, we can subtract 
-	// the paused time from mCurrTime:  
+	// 시간차 mCurrTime - mBaseTime에는 일시 정지 누적 시간이 포함되어 있다.
+	// 이를 전체 시간에 포함하면 안되므로, 그 시간을 mCurrTime에서 뺀다.
+	//  
 	//
 	//  (mCurrTime - mPausedTime) - mBaseTime 
 	//
@@ -71,16 +71,22 @@ void GameTimer::Start()
 
 
 	// Accumulate the time elapsed between stop and start pairs.
-	//
+	// 정지(일시 정지)와 시작(재개) 사이에 흐른 시간을 누적한다.
 	//                     |<-------d------->|
 	// ----*---------------*-----------------*------------> time
 	//  mBaseTime       mStopTime        startTime     
 
+	// 정지 상태에서 타이머를 재개하는 경우
 	if( mStopped )
 	{
+		// 일시 정지된 시간을 누적한다.
 		mPausedTime += (startTime - mStopTime);	
-
+		// 타이머를 다시 시작하는 것이므로, 현재의 mPrevTime(이전 시간)은
+		// 유효하지 않다(일시 정지 도중에 갱신되었을 것이므로).
+		// 따라서 현재 시간으로 다시 설정한다.
 		mPrevTime = startTime;
+
+		// 이제는 정지 상태가 아니므로 관련 멤버들을 갱신한다.
 		mStopTime = 0;
 		mStopped  = false;
 	}
@@ -88,11 +94,13 @@ void GameTimer::Start()
 
 void GameTimer::Stop()
 {
+	// 이미 정지 상태면 아무 일도 하지 않는다.
 	if( !mStopped )
 	{
 		__int64 currTime;
 		QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
-
+		// 그렇지 않다면 현재 시간을 타이머 정지 시점 시간으로 저장하고,
+		// 타이머가 정지되었음을 뜻하는 부울 플래그를 설정한다.
 		mStopTime = currTime;
 		mStopped  = true;
 	}
