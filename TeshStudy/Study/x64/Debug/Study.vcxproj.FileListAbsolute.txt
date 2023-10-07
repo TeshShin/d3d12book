@@ -1,0 +1,3 @@
+C:\Users\shint\Desktop\d3d12book-master\TeshStudy\Study\x64\Debug\Study.exe
+C:\Users\shint\Desktop\DX12\d3d12book\TeshStudy\Study\x64\Debug\Study.exe
+C:\Users\shint\Desktop\d3d12book\TeshStudy\Study\x64\Debug\Study.exe

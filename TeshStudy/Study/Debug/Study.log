@@ -1,0 +1,13 @@
+﻿  Camera.cpp
+  d3dApp.cpp
+  d3dUtil.cpp
+C:\d3d12book-master\Common\d3dUtil.cpp(30,5): warning C4244: '인수': 'std::streamoff'에서 'SIZE_T'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\d3d12book-master\Common\d3dUtil.cpp(70,32): warning C4244: '=': 'UINT64'에서 'LONG_PTR'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  DDSTextureLoader.cpp
+  GameTimer.cpp
+  GeometryGenerator.cpp
+  MathHelper.cpp
+  BoxApp.cpp
+  코드를 생성하고 있습니다...
+MSVCRTD.lib(exe_main.obj) : error LNK2019: _main"int __cdecl invoke_main(void)" (?invoke_main@@YAHXZ) 함수에서 참조되는 확인할 수 없는 외부 기호
+C:\d3d12book-master\TeshStudy\Study\Debug\Study.exe : fatal error LNK1120: 1개의 확인할 수 없는 외부 참조입니다.
