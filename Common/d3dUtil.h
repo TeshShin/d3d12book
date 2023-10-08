@@ -127,7 +127,7 @@ public:
 		const std::string& entrypoint,
 		const std::string& target);
 };
-
+// 반환값이 실패를 뜻하는 값이면 예외를 던지는데, 그 예외에는 오류 부호, 문제를 일으킨 함수 호출 표현식과 그 표현식이 있는 파일 이름 및 행 번호가 들어있다.
 class DxException
 {
 public:
@@ -274,6 +274,12 @@ struct Texture
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadHeap = nullptr;
 };
 
+
+// ThrowIfFailed를 보통의 함수가 아니라 매크로로 정의해야 함.
+// 매크로가 아니라 함수로 구현하면 __FILE__과 __LINE__이 
+// ThrowIfFailed 호출이 있는 파일과 행 번호가 아니라 그 함수가 구현된 파일과 행 번호로 치환되므로 쓸모가 없다.
+// L#x는 ThrowIfFailed 매크로의 인수 토큰을 하나의 유니코드 문자열로 바꾼다. 이 덕분에 오류를 일으킨
+// 함수 호출 표현식 전체를 메시지 상자에 출력할 수 있다.
 #ifndef ThrowIfFailed
 #define ThrowIfFailed(x)                                              \
 {                                                                     \
