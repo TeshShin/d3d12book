@@ -50,7 +50,7 @@ protected:
 
 	// Convenience overrides for handling mouse input.
 	virtual void OnMouseDown(WPARAM btnState, int x, int y){ }  // 마우스 메시지를 처리하고자 하는 응용 프로그램은 mSGpROC을 재정의하는 대신 이 메서드들을 재정의해도 된다.
-	virtual void OnMouseUp(WPARAM btnState, int x, int y)  { }  // 세 메서드 모두, 첫 매개변수는 wINDOWS의 여러 마우스 메시지들에 대한 WPARAM과 같다. 여기에는 마우스 버튼의
+	virtual void OnMouseUp(WPARAM btnState, int x, int y)  { }  // 세 메서드 모두, 첫 매개변수는 WINDOWS의 여러 마우스 메시지들에 대한 WPARAM과 같다. 여기에는 마우스 버튼의
 	virtual void OnMouseMove(WPARAM btnState, int x, int y){ }  // 상태(즉, 마우스 사건 발생 시 눌린 구체적인 마우스 버튼에 대한 정보)가 담겨 있다. 둘째, 셋째, 매개 변수는
                                                                 // 클라이언트 영역 안에서의 마우스 커서의 좌표 (x,y)이다.
 protected:
