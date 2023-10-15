@@ -198,17 +198,21 @@ void BoxApp::Draw(const GameTimer& gt)
 	
     // Specify the buffers we are going to render to.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
+    // 아래 3개와 SetGraphicsRootDescriptorTable코드는 루트 서명과 CBV 힙을 명령 목록에 설정하고, 파이프라인에 묶을 자원들을 지정하는 서술자 테이블을 설정한다.
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-
+    //
 	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
 	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
     mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    
-    mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
+    // 루트 서명을 설정한 후에 호출해서 서술자 테이블을 파이프라인에 묶는다.
+    mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart()); // 매개변수: 1. 설정하고자 하는 루트 서명의 색인, 2. 설정하고자 하는
+                                                                                                     // 서술자 테이블의 첫 서술자에 해당하는 서술자(힙에 있는)의 핸들
+                                                                                                     // 예를 들어 서술자 다섯 개를 담는 서술자 테이블로 정의된 루트 서명의 경우,
+                                                                                                     // 힙에서 BaseDescriptor에 해당하는 서술자와 그 다음의 네 서술자가 루트 서명의
+                                                                                                     // 서술자 테이블에 설정된다.
 
     mCommandList->DrawIndexedInstanced(
 		mBoxGeo->DrawArgs["box"].IndexCount, 
@@ -328,18 +332,23 @@ void BoxApp::BuildRootSignature()
 	// thought of as defining the function signature.  
 
 	// Root parameter can be a table, root descriptor or root constants.
+    // 루트 매개변수는 테이블이거나 루트 서술자 또는 루트 상수이다.
 	CD3DX12_ROOT_PARAMETER slotRootParameter[1];
 
 	// Create a single descriptor table of CBVs.
+    // CVB 하나를 담는 서술자 테이블을 생성한다.
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
-	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // 매개변수 2. 테이블의 서술자 개수, 3. 이 루트 매개변수에 묶일 셰이더 인수들의 기준 레지스터 번호
+	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable); // 1. 구간(range)개수, 2. 구간들의 배열을 가리키는 포인터
 
 	// A root signature is an array of root parameters.
+    // 루트 서명은 루트 매개변수들의 배열이다.
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr, 
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+    // 상수 버퍼 하나로 구성된 서술자 구간을 가리키는
+    // 슬롯 하나로 이루어진 루트 서명을 생성한다.
 	ComPtr<ID3DBlob> serializedRootSig = nullptr;
 	ComPtr<ID3DBlob> errorBlob = nullptr;
 	HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -350,7 +359,9 @@ void BoxApp::BuildRootSignature()
 		::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
 	}
 	ThrowIfFailed(hr);
-
+    // CD3DX12_ROOT_PARAMETER와 CD3DX12_DESCRIPTOR_RANGE는 다음장에서 더 설명
+    // 지금은 다음 코드가 CBV 하나(상수 버퍼 레지스터 0에 묶이는, 즉 HLSL 코드의 register(b0)에 대응되는)를 담은
+    // 서술자 테이블을 시대하는 루트 매개변수를 생성한다는 점만 이해하고 넘어가자.
 	ThrowIfFailed(md3dDevice->CreateRootSignature(
 		0,
 		serializedRootSig->GetBufferPointer(),
