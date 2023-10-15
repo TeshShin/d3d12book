@@ -21,7 +21,7 @@ struct Vertex
     XMFLOAT3 Pos;
     XMFLOAT4 Color;
 };
-
+// 물체당 상수 자료
 struct ObjectConstants
 {
     XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
@@ -150,11 +150,13 @@ void BoxApp::OnResize()
 void BoxApp::Update(const GameTimer& gt)
 {
     // Convert Spherical to Cartesian coordinates.
+    // 구면 좌표를 데카르트 좌표(직교 좌표)로 변환한다.
     float x = mRadius*sinf(mPhi)*cosf(mTheta);
     float z = mRadius*sinf(mPhi)*sinf(mTheta);
     float y = mRadius*cosf(mPhi);
 
     // Build the view matrix.
+    // 시야 행렬을 구축한다.
     XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
     XMVECTOR target = XMVectorZero();
     XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -167,6 +169,7 @@ void BoxApp::Update(const GameTimer& gt)
     XMMATRIX worldViewProj = world*view*proj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
+    // 최신의 worldViewProj 행렬로 상수 버퍼를 갱신한다.
 	ObjectConstants objConstants;
     XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
     mObjectCB->CopyData(0, objConstants);
@@ -250,26 +253,32 @@ void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
     if((btnState & MK_LBUTTON) != 0)
     {
         // Make each pixel correspond to a quarter of a degree.
+        // 마우스의 한 픽셀 이동을 4분의 1도에 대응 시킨다.
         float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
         float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
 
         // Update angles based on input to orbit camera around box.
+        // 입력에 기초해 각도를 갱신해서 카메라가 상자를 중심으로 공전하게 한다.
         mTheta += dx;
         mPhi += dy;
 
         // Restrict the angle mPhi.
+        // mPhi 각도를 제한한다.
         mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
     }
     else if((btnState & MK_RBUTTON) != 0)
     {
         // Make each pixel correspond to 0.005 unit in the scene.
+        // 마우스 한 픽셀 이동을 장면의 0.005단위에 대응시킨다.
         float dx = 0.005f*static_cast<float>(x - mLastMousePos.x);
         float dy = 0.005f*static_cast<float>(y - mLastMousePos.y);
 
         // Update the camera radius based on input.
+        // 입력에 기초해서 카메라 반지름을 갱신한다.
         mRadius += dx - dy;
 
         // Restrict the radius.
+        // 반지름을 제한한다.
         mRadius = MathHelper::Clamp(mRadius, 3.0f, 15.0f);
     }
 
@@ -290,19 +299,21 @@ void BoxApp::BuildDescriptorHeaps()
 
 void BoxApp::BuildConstantBuffers()
 {
-	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), 1, true);
+	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), 1, true); // 물체 2번째 매개변수 개의 상수 자료를 담을 상수 버퍼
 
-	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-
+	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants)); // d3dUtil::CalcConstantBufferByteSize는 버퍼의 크기(바이트 개수)를 
+                                                                                       // 최소 하드웨어 할당 크기(256바이트)의 배수가 되게하는 계산을 수행해준다.
+    // 버퍼 자체의 시작 주소(0번째 상수 버퍼의 주소)
 	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
     // Offset to the ith object constant buffer in the buffer.
+    // 버퍼에 담긴 i(여기선 0)번째 상수 버퍼의 오프셋
     int boxCBufIndex = 0;
 	cbAddress += boxCBufIndex*objCBByteSize;
 
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc; // 상수 버퍼 자원 중 HLSL 상수 버퍼 구조체에 묶일 부분을 서술한다.
 	cbvDesc.BufferLocation = cbAddress;
 	cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-
+    //위에 둘을 지정함으로써 i번째 물체의 상수 자료에 대한 뷰를 얻을 수 있다.
 	md3dDevice->CreateConstantBufferView(
 		&cbvDesc,
 		mCbvHeap->GetCPUDescriptorHandleForHeapStart());

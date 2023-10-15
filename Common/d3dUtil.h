@@ -96,12 +96,16 @@ public:
 
     static std::string ToString(HRESULT hr);
 
-    static UINT CalcConstantBufferByteSize(UINT byteSize)
+    static UINT CalcConstantBufferByteSize(UINT byteSize) // d3dUtil::CalcConstantBufferByteSize는 버퍼의 크기(바이트 개수)를 
+                                                          // 최소 하드웨어 할당 크기(256바이트)의 배수가 되게하는 계산을 수행해준다.
     {
         // Constant buffers must be a multiple of the minimum hardware
         // allocation size (usually 256 bytes).  So round up to nearest
         // multiple of 256.  We do this by adding 255 and then masking off
         // the lower 2 bytes which store all bits < 256.
+        // 상수 버퍼의 크기는 반드시 최소 하드웨어 할당 크기(흔히 256바이트)의
+        // 배수이어야 한다. 이 메서드는 크기에 255를 더하고 비트마스크를 이용해서
+        // 하위 2바이트, 즉 256보다 작은 모든 비트를 0으로 만든다
         // Example: Suppose byteSize = 300.
         // (300 + 255) & ~255
         // 555 & ~255
