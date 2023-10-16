@@ -40,7 +40,6 @@ public:
                                                                                                // 
                                                                                                // Unmap의 매개변수: 1. 대응을 해제할 부분 자원의 색인. 버퍼는 0
                                                                                                // 2. 대응을 해제할 메모리 범위를 서술하는 D3D12_RANGE 구조체의 포인터. 자원 전체를 대응하려면 nullptr
-
         // We do not need to unmap until we are done with the resource.  However, we must not write to
         // the resource while it is in use by the GPU (so we must use synchronization techniques).
         // 자원을 다 사용하기 전에는 대응을 해제할 필요가 없다.

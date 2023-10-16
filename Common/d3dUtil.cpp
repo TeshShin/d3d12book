@@ -17,7 +17,7 @@ bool d3dUtil::IsKeyDown(int vkeyCode)
 {
     return (GetAsyncKeyState(vkeyCode) & 0x8000) != 0;
 }
-
+// 컴파일된 셰이더 바이트코드를 적재하는 함수
 ComPtr<ID3DBlob> d3dUtil::LoadBinary(const std::wstring& filename)
 {
     std::ifstream fin(filename, std::ios::binary);
@@ -93,13 +93,14 @@ Microsoft::WRL::ComPtr<ID3D12Resource> d3dUtil::CreateDefaultBuffer(
 
     return defaultBuffer;
 }
-
+// 이 함수는 컴파일 오류 메시지를 Visual Studio의 디버그 창에 출력한다(디버그 모드에서).
 ComPtr<ID3DBlob> d3dUtil::CompileShader(
 	const std::wstring& filename,
 	const D3D_SHADER_MACRO* defines,
 	const std::string& entrypoint,
 	const std::string& target)
 {
+    // 디버그 모드에서는 디버깅 관련 플래그들을 사용한다.
 	UINT compileFlags = 0;
 #if defined(DEBUG) || defined(_DEBUG)  
 	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
@@ -109,9 +110,32 @@ ComPtr<ID3DBlob> d3dUtil::CompileShader(
 
 	ComPtr<ID3DBlob> byteCode = nullptr;
 	ComPtr<ID3DBlob> errors;
+    // 6.7 셰이더의 컴파일
+    // 1. pFileName: 컴파일할 HLSL 소스 코드를 담은 .hlsl 파일의 이름.
+    // 2. pDefines: 고급 옵션으로, 이 책에서는 사용 안함. 자세한 사항은 SDK 문서화 참고
+    // 3. pInclude: 고급 옵션으로, 이 책에서는 사용 안함. 자세한 사항은 SDK 문서화 참고
+    // 4. pEntrypoint: 셰이더 프로그램의 진입점 함수의 이름. 하나의 .hlsl 파일에 여러 개의 셰이더 프로그램이 있을 수 있으므로
+    // (이를테면 정점 셰이더 하나와 픽셀 셰이더 하나), 컴파일할 특정 셰이더의 진입점을 명시해 주어야 한다.
+    // 5. pTarget: 사용할 셰이더 프로그램의 종류와 대상 버전을 나타내는 문자열. 이 책의 예제들은 5.0과 5.1을 사용한다.
+    // (a) vs_5_0과 vs_5_1: 각각 정점 셰이더 5.0과 5.1
+    // (b) hs_5_0과 hs_5_1: 각각 덮개(절14.2) 셰이더 5.0과 5.1
+    // (c) ds_5_0과 ds_5_1: 각각 영역(절14.4) 셰이더 5.0과 5.1
+    // (d) gs_5_0과 gs_5_1: 각각 기하(제 12장) 셰이더 5.0과 5.1
+    // (e) ps_5_0과 ps_5_1: 각각 픽셀 셰이더 5.0과 5.1
+    // (f) cs_5_0과 cs_5_1: 각각 계산(제 13장) 셰이더 5.0과 5.1
+    // 6. Flags1: 셰이더 코드의 세부적인 컴파일 방식을 제어하는 플래그들. SDK에는 많은 플래그가 있지만 책에선 두가지만
+    // (a) D3DCOMPILE_DEBUG: 셰이더를 디버그 모드에서 컴파일 한다.
+    // (b) D3DCOMPILE_SKIP_OPTIMIZATION: 최적화를 생략한다(디버깅에 유용함).
+    // 7. Flags2: 효과(effect)의 컴파일에 관한 고급 옵션으로, 이 책에서는 사용하지 않는다.
+    // 8. ppCode: 컴파일된 셰이더 목적 바이트코드(shader object bytecode)를 담은 ID3DBlob구조체의 포인터를 이 매개변수를 통해서 돌려준다.
+    // 9. ppErrorMsgs: 컴파일 오류가 발생한 경우 오류 메시지 문자열을 담은 ID3DBlob 구조체의 포인터를 이 매개변수를 통해서 돌려준다.
+    // ID3DBlob은 범용 메모리 버퍼를 나타내는 형식으로, 다음 두 메서드를 제공한다.
+    // (a) LPVOID GetBufferPointer: 버퍼를 가리키는 void* 포인터를 돌려준다. 그 블록에 담긴 객체를 실제로 사용하려면 먼저 적절한 형식으로 캐스팅해야 한다.
+    // (b) SIZE_T GetBufferSize: 버퍼의 크기(바이트 개수)를 돌려준다.
 	hr = D3DCompileFromFile(filename.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		entrypoint.c_str(), target.c_str(), compileFlags, 0, &byteCode, &errors);
-
+    // 오류 메시지를 디버그 창에 출력한다.
+    // HLSL의 오류 메시지와 경고 메시지는 ppErrorMsgs 매개변수를 통해서 반환된다. 여기선 errors
 	if(errors != nullptr)
 		OutputDebugStringA((char*)errors->GetBufferPointer());
 

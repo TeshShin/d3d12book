@@ -150,6 +150,11 @@ public:
 // geometries are stored in one vertex and index buffer.  It provides the offsets
 // and data needed to draw a subset of geometry stores in the vertex and index 
 // buffers so that we can implement the technique described by Figure 6.3.
+// 이 구조체는 MeshGeometry가 대표하는 기하구조 그룹(메시)의 부분 구간, 부분
+// 메시를 정의한다. 부분 메시는 하나의 정점/색인 버퍼에 여러 개의 기하구조가
+// 들어 있는 경우에 쓰인다. 이 구조체는 정점/색인 버퍼에 저장된 메시의 부분
+// 메시를 그리는데 필요한 오프셋들과 자료를 제공하다. 이를 통해서 [그림 6.3]에
+// 나온 기법을 구현할 수 있다.
 struct SubmeshGeometry
 {
 	UINT IndexCount = 0;
@@ -158,16 +163,22 @@ struct SubmeshGeometry
 
     // Bounding box of the geometry defined by this submesh. 
     // This is used in later chapters of the book.
+    // 이 부분 메시가 정의하는 기하구조의 경계 상자(bounding box)
+    // 경계 상자는 이 책의 이후 장들에서 쓰인다.
 	DirectX::BoundingBox Bounds;
 };
 
 struct MeshGeometry
 {
 	// Give it a name so we can look it up by name.
+    // 이 메시를 이름으로 조회할 수 있도록 이름을 부여한다.
 	std::string Name;
 
 	// System memory copies.  Use Blobs because the vertex/index format can be generic.
 	// It is up to the client to cast appropriately.  
+    // 시스템 메모리 복사본. 정점/색인 형식이 범용적일 수 있으므로
+    // 블로브(ID3Dlob)를 사용한다.
+    // 실제로 사용할 때에는 클라이언트에서 적절한 캐스팅해야 한다.
 	Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3DBlob> IndexBufferCPU  = nullptr;
 
@@ -178,6 +189,7 @@ struct MeshGeometry
 	Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
 
     // Data about the buffers.
+    // 버퍼들에 관한 자료
 	UINT VertexByteStride = 0;
 	UINT VertexBufferByteSize = 0;
 	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;
@@ -186,6 +198,9 @@ struct MeshGeometry
 	// A MeshGeometry may store multiple geometries in one vertex/index buffer.
 	// Use this container to define the Submesh geometries so we can draw
 	// the Submeshes individually.
+    // 한 MeshGeometry 인스턴스의 한 정점/색인 버퍼에 여러 개의
+    // 기하구조를 담을 수 있다.
+    // 부분 메시들을 개별적으로 그릴 수 있도록, 부분 메시 기하구조들을 컨테이너에 담아둔다.
 	std::unordered_map<std::string, SubmeshGeometry> DrawArgs;
 
 	D3D12_VERTEX_BUFFER_VIEW VertexBufferView()const
@@ -209,6 +224,7 @@ struct MeshGeometry
 	}
 
 	// We can free this memory after we finish upload to the GPU.
+    // 자료를 GPU에 모두 올린 후에는 메모리를 해제해도 된다.
 	void DisposeUploaders()
 	{
 		VertexBufferUploader = nullptr;

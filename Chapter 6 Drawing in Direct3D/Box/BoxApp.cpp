@@ -372,7 +372,7 @@ void BoxApp::BuildRootSignature()
 void BoxApp::BuildShadersAndInputLayout()
 {
     HRESULT hr = S_OK;
-    
+    // 셰이더 프로그램 컴파일 호출
 	mvsByteCode = d3dUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCode = d3dUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
 
@@ -457,6 +457,36 @@ void BoxApp::BuildBoxGeometry()
 
 void BoxApp::BuildPSO()
 {
+    //D3D12_GRAPHICS_PIPELINE_STATE_DESC: 파이프라인 상태를 서술한다.
+    // 1. pRootSignature: 이 PSO와 함께 묶을 루트 서명을 가리키는 포인터. 루트 서명은 반드시 이 PSO로 묶는 셰이더들과 호환되어야 한다.
+    // 2. VS: 묶을 정점 셰이더를 서술하는 D3D12_SHADER_BYTECODE 구조체. 이 구조체는 컴파일된 바이트코드 자료를 가리키는 포인터와
+    // 그 바이트코드 자료의 크기(바이트 개수)로 구성된다.
+    // 3. PS: 묶을 픽셀 셰이더
+    // 4. DS: 묶을 영역 셰이더(영역 셰이더는 14.4절)
+    // 5. HS: 묶을 덮개 셰이더(덮개 셰이더는 14.2절)
+    // 6. GS: 묶을 기하 셰이더(기하 셰이더는 12장)
+    // 7. StreamOutput: 스트림 출력이라고 하는 고급 기법에 쓰인다. 일단 지금은 이 필드에 그냥 0을 지정한다.
+    // 8. BlendState: 혼합 방식을 서술하는 혼합 상태를 지정한다. 혼합과 혼합 상태 그룹은 제 10장에서 이야기한다.
+    // 일단 지금은 기본값에 해당하는 CD3DX12_BLEND_DESC(D3D12_DEFAULT)를 지정한다.
+    // 9. SampleMask: 다중표본화는 최대 32개의 표본을 취할 수 있다. 
+    // 이 32비트 정수 필드의 각 비트는 각 표본의 활성화/비활성화 여부를 결정한다.
+    // 예를 들어, 다섯 번째 비트를 끄면(0) 다섯 번째 표본은 추출되지 않는다.
+    // 물론, 다중표본화가 다섯 개 이상의 표본을 사용하지 않는다면 다섯번째
+    // 표본을 비활성화하는 것은 렌더링 결과에 영향을 미치지 않는다. 
+    // 만일 응용 프로그램이 단일 표본화를 사용한다면, 이 필드에서 의미가 있는 것은 첫 비트 뿐이다.
+    // 일반적으로 이 필드에는 기본값인 0xffffffff(그 어떤 표본도 비활성화하지 않는다)를 지정한다.
+    // 10. RasterizerState: 래스터화 단계를 구성하는 래스터화기 상태를 지정한다.
+    // 11. DepthStencilState: 깊이-스텐실 판정을 구성하는 깊이-스텐실 상태를 지정한다. 이 상태 그룹은 제 11장에서 논의한다.
+    // 일단 지금은 기본값에 해당하는 CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT)를 지정한다.
+    // 12. InputLayout: 입력 배치를 서술하는 구조체를 지정한다. 이 구조체는 다음과 같이 그냥 D3D12_INPUT_ELEMENT_DESC 원소들의 배열과 그 배열의
+    // 원소 개수로 구성되어 있다.
+    // 13. PrimitiveTopologyType: 기본도형 위상구조 종류를 지정한다.
+    // 14. NumRenderTargets: 동시에 사용할 렌더 대상 개수.
+    // 15. RTVFormats: 렌더 대상 형식들. 동시에 여러 렌더 대상에 장면을 그릴 수 있도록, 렌더 대상 형식들의 배열을 지정한다.
+    // 그 형식들은 이 PSO와 함께 사용할 렌더 대상의 설정들과 부합해야 한다.
+    // 16. DSVFormat: 깊이-스텐실 버퍼의 형식. 이 PSO와 함께 사용할 깊이-스텐실 버퍼의 설정들과 부합해야 한다.
+    // 17. SampleDesc: 다중 표본화의 표본 개수와 품질 수준을 서술한다. 이 PSO와 함께 사용할 렌더 대상의 설정들과 부합해야 한다.
+    // D3D12_GRAPHICS_PIPELINE_STATE_DESC을 채운 후에는 CreateGraphicsPipelineState 메서드를 이용해서 ID3D12PipelineState 객체를 생성한다.
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
     ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
     psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
@@ -471,6 +501,20 @@ void BoxApp::BuildPSO()
 		reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()), 
 		mpsByteCode->GetBufferSize() 
 	};
+    // CD3DX12_RASTERIZER_DESC(D3DX12_RASTERIZER_DESC을 상속해서 편의용 생성자를 추가한 보조 클래스) 타고 들어가면
+    // D3DX12_RASTERIZER_DESC의 매개변수들이 있다.
+    // D3DX12_RASTERIZER_DESC: 래스터화기 상태
+    // 1. FillMode: 와이어프레임 렌더링을 위해서는 D3D12_FILL_WIREFRAME을,
+    // 면의 속을 채운(solid) 렌더링을 위해서는 D3D12_FILL_SOLID를 지정한다.
+    // 기본은 속을 채운 렌더링이다.
+    // 2. CullMode: 선별을 끄려면 D3D12_CULL_NONE을, 후면 삼각형들을 선별(제외)하려면 D3D_CULL_BACK을,
+    // 전면 삼각형들을 선별하려면 D3D12_CULL_FRONT를 지정한다.
+    // 기본은 후면 삼각형 선별이다.
+    // 3. FrontCounterClockWise: 정점들이 시계방향(카메라 기준)으로 감긴 삼각형을 전면 삼각형으로 취급하고
+    // 반시계방향(카메라 기준)으로 감긴 삼각형을 후면 삼각형으로 취급하려면 false를 지정한다.
+    // 정점들이 반시계방향(카메라 기준)으로 감긴 삼각형을 전면 삼각형으로 취급하고 시계방향(카메라 기준)으로
+    // 감긴 삼각형을 후면 삼각형으로 취급하려면 true를 지정한다. 기본은 false이다.
+    // 4. ScissorEnable: 가위 판정(4.3.10절)을 활성화하려면 true를, 비활성화하려면 false를 지정한다. 기본은 false이다.
     psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -481,5 +525,9 @@ void BoxApp::BuildPSO()
     psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
     psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
     psoDesc.DSVFormat = mDepthStencilFormat;
+    // 하나의 ID3D12PipelineState 객체(psoDesc)에 상당히 많은 상태가 들어있다.
+    // 이 모든 객체를 하나의 집합체로서 렌더링 파이프라인에 지정하는 이유는 성능 때문이다.
+    // 다렉3D는 모든 상태가 호환되는지 미리 검증할 수 있으며, 드라이버는 하드웨어 상태의 프로그래밍을 위한 모든 코드를 미리 생성할 수 있다.
+    //
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
