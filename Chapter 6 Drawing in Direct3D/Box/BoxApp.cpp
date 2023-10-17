@@ -84,6 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 				   PSTR cmdLine, int showCmd)
 {
 	// Enable run-time memory check for debug builds.
+    // 디버그 빌드에서는 실행시점 메모리 점검 기능을 켠다.
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
@@ -118,6 +119,7 @@ bool BoxApp::Initialize()
 		return false;
 		
     // Reset the command list to prep for initialization commands.
+    // 초기화 명령들을 준비하기 위해 명령 목록을 재설정한다.
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
  
     BuildDescriptorHeaps();
@@ -133,6 +135,7 @@ bool BoxApp::Initialize()
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
     // Wait until initialization is complete.
+    // 초기화가 완료될 때까지 기다린다.
     FlushCommandQueue();
 
 	return true;
@@ -143,6 +146,7 @@ void BoxApp::OnResize()
 	D3DApp::OnResize();
 
     // The window resized, so update the aspect ratio and recompute the projection matrix.
+    // 창의 크기가 바뀌었으므로 종횡비를 갱신하고 투영 행렬을 다시 계산한다.
     XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f); // 수직 시야각 45도, 가까운평면은 z = 1, 먼평면은 z = 1000
     XMStoreFloat4x4(&mProj, P);
 }
@@ -179,31 +183,38 @@ void BoxApp::Draw(const GameTimer& gt)
 {
     // Reuse the memory associated with command recording.
     // We can only reset when the associated command lists have finished execution on the GPU.
+    // 명령 기록에 관련된 메모리의 재활용을 위해 명령 할당자를 재설정한다.
+    // 재설정은 GPU가 관련 명령 목록들을 모두 처리한 후에 일어난다.
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
 	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
     // Reusing the command list reuses memory.
+    // 명령 목록을 ExecuteCommandList를 통해서 명령 대기열에 추가했다면
+    // 명령 목록을 재설정할 수 있다. 명령 목록을 재설정하면 메모리가 재활용된다.
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
 
     mCommandList->RSSetViewports(1, &mScreenViewport);
     mCommandList->RSSetScissorRects(1, &mScissorRect);
 
     // Indicate a state transition on the resource usage.
+    // 자원 용도에 관련된 상태 전이를 Direct3D에 통지한다.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
     // Clear the back buffer and depth buffer.
+    // 후면버퍼와 깊이버퍼를 지운다.
     mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
     mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	
     // Specify the buffers we are going to render to.
+    // 랜더링 결과가 기록될 렌더 대상 버퍼들을 지정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
     // 아래 3개와 SetGraphicsRootDescriptorTable코드는 루트 서명과 CBV 힙을 명령 목록에 설정하고, 파이프라인에 묶을 자원들을 지정하는 서술자 테이블을 설정한다.
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-    //
+    //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
 	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
 	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
     mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -219,23 +230,30 @@ void BoxApp::Draw(const GameTimer& gt)
 		1, 0, 0, 0);
 	
     // Indicate a state transition on the resource usage.
+    // 자원 용도에 관련된 상태 전이를 Direct3D에 통지한다.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
     // Done recording commands.
+    // 명령들의 기록을 마친다.
 	ThrowIfFailed(mCommandList->Close());
  
     // Add the command list to the queue for execution.
+    // 명령 실행을 위해 명령 목록을 명령 대기열에 추가한다.
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	
 	// swap the back and front buffers
+    // 후면 버퍼와 전면 버퍼를 교환한다.
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
 	// Wait until frame commands are complete.  This waiting is inefficient and is
 	// done for simplicity.  Later we will show how to organize our rendering code
 	// so we do not have to wait per frame.
+    // 이 프레임의 명령들이 모두 처리되길 기다린다. 이러한 대기는 비효율적이다.
+    // 이번에는 예제의 간단함을 위해 이 방법을 사용하지만 이후의 예제들에서는 렌더링
+    // 코드를 적절히 조직화해서 프레임마다 대기할 필요가 없게 만든다.
 	FlushCommandQueue();
 }
 
@@ -310,7 +328,7 @@ void BoxApp::BuildConstantBuffers()
     // 버퍼 자체의 시작 주소(0번째 상수 버퍼의 주소)
 	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
     // Offset to the ith object constant buffer in the buffer.
-    // 버퍼에 담긴 i(여기선 0)번째 상수 버퍼의 오프셋
+    // 버퍼에 담긴 i(여기선 0)번째 상수 버퍼의 오프셋을 얻는다.
     int boxCBufIndex = 0;
 	cbAddress += boxCBufIndex*objCBByteSize;
 
@@ -329,10 +347,14 @@ void BoxApp::BuildRootSignature()
 	// textures, samplers).  The root signature defines the resources the shader
 	// programs expect.  If we think of the shader programs as a function, and
 	// the input resources as function parameters, then the root signature can be
-	// thought of as defining the function signature.  
+	// thought of as defining the function signature.
+    // 일반적으로 셰이더 프로그램은 특정 자원들(상수 버퍼, 텍스처, 표본추출기 등)이 입력된다고 기대한다.
+    // 루트 서명은 셰이더 프로그램이 기대하는 자원들을 정의한다.
+    // 세이더 프로그램은 본질적으로 하나의 함수이고 셰이더에 입력되는 자원들은 함수의 매개변수들에 해당하므로,
+    // 루트 서명은 곧 함수 서명을 정의하는 수단이라 할 수 있다.
 
 	// Root parameter can be a table, root descriptor or root constants.
-    // 루트 매개변수는 테이블이거나 루트 서술자 또는 루트 상수이다.
+    // 루트 매개변수는 서술자 테이블이거나 루트 서술자 또는 루트 상수이다.
 	CD3DX12_ROOT_PARAMETER slotRootParameter[1];
 
 	// Create a single descriptor table of CBVs.
