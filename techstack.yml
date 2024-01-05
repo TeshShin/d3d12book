@@ -1,7 +1,8 @@
 repo_name: TeshShin/d3d12book
 report_id: a30d6d6be1c004f908a5bd8f39320301
+version: 0.1
 repo_type: Public
-timestamp: '2023-11-30T18:50:40+00:00'
+timestamp: '2024-01-05T08:29:32+00:00'
 requested_by: TeshShin
 provider: github
 branch: master
@@ -16,6 +17,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/1049/cplusplus.png
+  detection_source_url: https://github.com/TeshShin/d3d12book
   detection_source: Repo Metadata
 - name: Git
   description: Fast, scalable, distributed revision control system
@@ -25,6 +27,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Version Control System
   image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/TeshShin/d3d12book
   detection_source: Repo Metadata
 - name: Visual Studio
   description: State-of-the-art tools and services that you can use to create great
@@ -35,6 +38,8 @@ tools:
   category: Build, Test, Deploy
   sub_category: Integrated Development Environment
   image_url: https://img.stackshare.io/service/1451/SR2hUhQN.png
+  detection_source_url: https://github.com/TeshShin/d3d12book/blob/master/Chapter
+    1 Vector Algebra/XMVECTOR/XMVECTOR.sln
   detection_source: Chapter 1 Vector Algebra/XMVECTOR/XMVECTOR.sln
   last_updated_by: d3dcoder
   last_updated_on: 2016-03-25 04:32:13.000000000 Z
